@@ -117,3 +117,76 @@ def mutation(chromosome):
 
 
 
+# --- Main GA Execution ---
+
+
+def run_genetic_algorithm():
+    """The main orchestration logic for the GA."""
+    population = create_initial_population()
+    best_chromosome_overall = None
+    best_fitness_overall = -1.0
+    print("--- Starting Genetic Algorithm ---")
+
+    for generation in range(NUM_GENERATIONS):
+        fitness_scores = [calculate_fitness(chromo) for chromo in population]
+
+        # Find the best of the current generation
+        best_fitness_gen = max(fitness_scores)
+        best_chromosome_gen = population[np.argmax(fitness_scores)]
+
+        # Update overall best if current generation is better
+        if best_fitness_gen > best_fitness_overall:
+            best_fitness_overall = best_fitness_gen
+            best_chromosome_overall = best_chromosome_gen
+
+        print(
+            f"Generation {generation + 1}/{NUM_GENERATIONS} | "
+            f"Best Fitness: {best_fitness_overall:.4f} | "
+            f"Features: {sum(best_chromosome_overall)}"
+        )
+
+        # Create the next generation
+        next_population = []
+        for _ in range(POPULATION_SIZE // 2):
+            parent1, parent2 = selection(population, fitness_scores)
+
+            # Create two children
+            child1 = crossover(parent1, parent2)
+            child2 = crossover(parent2, parent1)
+
+            next_population.append(mutation(child1))
+            next_population.append(mutation(child2))
+
+        population = next_population
+
+    print("--- Genetic Algorithm Finished ---")
+    return best_chromosome_overall
+
+
+if name == "main":
+    final_best_chromosome = run_genetic_algorithm()
+
+    # Final evaluation of the best chromosome found
+    selected_features = get_selected_features(final_best_chromosome)
+    final_fitness = calculate_fitness(final_best_chromosome)
+
+    # To get the raw accuracy without the penalty, we can recalculate it
+    X_subset = X[selected_features]
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_subset, y, test_size=0.3, random_state=42
+    )
+    model = LogisticRegression(max_iter=5000)
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+    final_accuracy = accuracy_score(y_test, predictions)
+
+    print("\n--- Optimal Feature Set Found ---")
+    print(
+        f"Number of features selected: {len(selected_features)} out of {NUM_FEATURES}"
+    )
+    print(f"Final Model Accuracy: {final_accuracy:.4f}")
+    print("\nSelected Features:")
+    for feature in selected_features:
+        print(f"- {feature}")
+
+
