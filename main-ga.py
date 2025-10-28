@@ -80,6 +80,7 @@ def selection(population, fitness_scores):
     Selects two parents using tournament selection.
     In a tournament, k individuals are chosen randomly, and the fittest becomes a parent.
     """
+    
     parents = []
     for _ in range(2):  # Select two parents
         tournament_indices = random.sample(range(POPULATION_SIZE), TOURNAMENT_SIZE)
