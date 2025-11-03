@@ -161,8 +161,40 @@ def run_genetic_algorithm():
 
     print("--- Genetic Algorithm Finished ---")
     return best_chromosome_overall
+    # --- Missing Functions (added manually) ---
+
+def calculate_fitness(chromosome):
+    """Evaluates a chromosome by training a Logistic Regression model on the selected features."""
+    selected_features = [i for i in range(NUM_FEATURES) if chromosome[i] == 1]
+    if len(selected_features) == 0:
+        return 0  # Avoid empty feature sets
+
+    X_selected = X.iloc[:, selected_features]
+    X_train, X_test, y_train, y_test = train_test_split(X_selected, y, test_size=0.2, random_state=42)
+    
+    model = LogisticRegression(max_iter=200)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    
+    # Encourage smaller feature sets (penalty)
+    penalty = len(selected_features) * 0.001
+    return acc - penalty
 
 
+def crossover(parent1, parent2):
+    """Single-point crossover between two parents."""
+    point = random.randint(1, NUM_FEATURES - 1)
+    child = parent1[:point] + parent2[point:]
+    return child
+
+
+def mutation(chromosome, mutation_rate=0.05):
+    """Randomly flips bits in the chromosome."""
+    for i in range(NUM_FEATURES):
+        if random.random() < mutation_rate:
+            chromosome[i] = 1 - chromosome[i]
+    return chromosome
 if name == "main":
     final_best_chromosome = run_genetic_algorithm()
 
