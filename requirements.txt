@@ -8,5 +8,8 @@ scipy==1.13.1
 six==1.17.0
 threadpoolctl==3.6.0
 tzdata==2025.2
+fastapi
+uvicorn
+pydantic
 streamlit
 requests
