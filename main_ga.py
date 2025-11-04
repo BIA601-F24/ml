@@ -195,7 +195,7 @@ def mutation(chromosome, mutation_rate=0.05):
         if random.random() < mutation_rate:
             chromosome[i] = 1 - chromosome[i]
     return chromosome
-if name == "main":
+if __name__ == "__main__":
     final_best_chromosome = run_genetic_algorithm()
 
     # Final evaluation of the best chromosome found
