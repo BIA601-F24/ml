@@ -21,15 +21,12 @@ TOURNAMENT_SIZE = 5
 COMPLEXITY_PENALTY_FACTOR = 0.001
 
 # --- Data Loading ---
-# We load data globally so the fitness function can access it without passing it around.
-# This is a common pattern in scripts like this for simplicity.
 cancer = load_breast_cancer()
 X = pd.DataFrame(cancer.data, columns=cancer.feature_names)
 y = pd.Series(cancer.target)
 NUM_FEATURES = X.shape[1]
 
 # --- Core GA Functions ---
-
 
 def create_initial_population():
     """Creates a list of random chromosomes to start the evolution."""
@@ -52,23 +49,21 @@ def calculate_fitness(chromosome):
     """
     selected_features = get_selected_features(chromosome)
 
-    # If a chromosome has no features, its fitness is 0. Avoids errors.
+    # If a chromosome has no features, its fitness is 0.
     if not selected_features:
         return 0.0
 
     X_subset = X[selected_features]
-
     X_train, X_test, y_train, y_test = train_test_split(
         X_subset, y, test_size=0.3, random_state=42
     )
 
-    model = LogisticRegression(max_iter=5000) 
+    model = LogisticRegression(max_iter=5000)
     model.fit(X_train, y_train)
-
     predictions = model.predict(X_test)
     accuracy = accuracy_score(y_test, predictions)
 
-    # Apply penalty for complexity (number of features)
+    # Apply penalty for model complexity
     num_selected = len(selected_features)
     fitness = accuracy - (num_selected * COMPLEXITY_PENALTY_FACTOR)
 
@@ -78,11 +73,9 @@ def calculate_fitness(chromosome):
 def selection(population, fitness_scores):
     """
     Selects two parents using tournament selection.
-    In a tournament, k individuals are chosen randomly, and the fittest becomes a parent.
     """
-    
     parents = []
-    for _ in range(2):  # Select two parents
+    for _ in range(2):
         tournament_indices = random.sample(range(POPULATION_SIZE), TOURNAMENT_SIZE)
         tournament_fitness = [fitness_scores[i] for i in tournament_indices]
         winner_index_in_tournament = np.argmax(tournament_fitness)
@@ -92,21 +85,14 @@ def selection(population, fitness_scores):
 
 
 def crossover(parent1, parent2):
-    """
-    Performs single-point crossover to create a child.
-    A random point is chosen, and the child gets genes from parent1 before this point
-    and genes from parent2 after this point.
-    """
+    """Performs single-point crossover to create a child."""
     crossover_point = random.randint(1, NUM_FEATURES - 1)
     child = parent1[:crossover_point] + parent2[crossover_point:]
     return child
 
 
 def mutation(chromosome):
-    """
-    Applies mutation to a chromosome.
-    For each gene, there's a small chance (MUTATION_RATE) it will be flipped.
-    """
+    """Applies mutation to a chromosome."""
     mutated_chromosome = []
     for gene in chromosome:
         if random.random() < MUTATION_RATE:
@@ -116,9 +102,7 @@ def mutation(chromosome):
     return mutated_chromosome
 
 
-
 # --- Main GA Execution ---
-
 
 def run_genetic_algorithm():
     """The main orchestration logic for the GA."""
@@ -149,11 +133,8 @@ def run_genetic_algorithm():
         next_population = []
         for _ in range(POPULATION_SIZE // 2):
             parent1, parent2 = selection(population, fitness_scores)
-
-            # Create two children
             child1 = crossover(parent1, parent2)
             child2 = crossover(parent2, parent1)
-
             next_population.append(mutation(child1))
             next_population.append(mutation(child2))
 
@@ -161,40 +142,9 @@ def run_genetic_algorithm():
 
     print("--- Genetic Algorithm Finished ---")
     return best_chromosome_overall
-    # --- Missing Functions (added manually) ---
-
-def calculate_fitness(chromosome):
-    """Evaluates a chromosome by training a Logistic Regression model on the selected features."""
-    selected_features = [i for i in range(NUM_FEATURES) if chromosome[i] == 1]
-    if len(selected_features) == 0:
-        return 0  # Avoid empty feature sets
-
-    X_selected = X.iloc[:, selected_features]
-    X_train, X_test, y_train, y_test = train_test_split(X_selected, y, test_size=0.2, random_state=42)
-    
-    model = LogisticRegression(max_iter=200)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)
-    
-    # Encourage smaller feature sets (penalty)
-    penalty = len(selected_features) * 0.001
-    return acc - penalty
 
 
-def crossover(parent1, parent2):
-    """Single-point crossover between two parents."""
-    point = random.randint(1, NUM_FEATURES - 1)
-    child = parent1[:point] + parent2[point:]
-    return child
-
-
-def mutation(chromosome, mutation_rate=0.05):
-    """Randomly flips bits in the chromosome."""
-    for i in range(NUM_FEATURES):
-        if random.random() < mutation_rate:
-            chromosome[i] = 1 - chromosome[i]
-    return chromosome
+# --- Run Directly ---
 if __name__ == "__main__":
     final_best_chromosome = run_genetic_algorithm()
 
@@ -202,7 +152,6 @@ if __name__ == "__main__":
     selected_features = get_selected_features(final_best_chromosome)
     final_fitness = calculate_fitness(final_best_chromosome)
 
-    # To get the raw accuracy without the penalty, we can recalculate it
     X_subset = X[selected_features]
     X_train, X_test, y_train, y_test = train_test_split(
         X_subset, y, test_size=0.3, random_state=42
@@ -213,12 +162,8 @@ if __name__ == "__main__":
     final_accuracy = accuracy_score(y_test, predictions)
 
     print("\n--- Optimal Feature Set Found ---")
-    print(
-        f"Number of features selected: {len(selected_features)} out of {NUM_FEATURES}"
-    )
+    print(f"Number of features selected: {len(selected_features)} out of {NUM_FEATURES}")
     print(f"Final Model Accuracy: {final_accuracy:.4f}")
     print("\nSelected Features:")
     for feature in selected_features:
         print(f"- {feature}")
-
-
